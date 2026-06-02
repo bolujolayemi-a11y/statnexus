@@ -1,10 +1,23 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
-import tailwindcss from '@tailwindcss/vite' // [1] Import it
+import tailwindcss from '@tailwindcss/vite'
 
 export default defineConfig({
   plugins: [
     react(),
-    tailwindcss(), // [2] Add it here
+    tailwindcss(),
   ],
+  build: {
+    rollupOptions: {
+      output: {
+        // This splits your heavy dependencies into a separate file
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            return 'vendor';
+          }
+        }
+      }
+    },
+    chunkSizeWarningLimit: 600 // Prevents the warning for files slightly over 500kb
+  }
 })
