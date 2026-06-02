@@ -1,0 +1,74 @@
+import { useState, useEffect } from 'react';
+import { supabase } from '../lib/supabaseClient.js';
+import { ArrowLeft, Loader2, Award } from 'lucide-react';
+import Card from '../components/common/Card.jsx';
+import Button from '../components/common/Button.jsx';
+
+export default function ResultsHistory({ setView, onSelectReview }) {
+  const [history, setHistory] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchHistory() {
+      try {
+        setLoading(true);
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        // Filter out rows where questions are null to prevent crashes
+        const { data, error } = await supabase
+          .from('test_results')
+          .select('id, exam_type, score, duration_minutes, completed_at, questions, user_answers')
+          .eq('user_id', user.id)
+          .not('questions', 'is', null) 
+          .order('completed_at', { ascending: false });
+
+        if (error) throw error;
+
+        const parsedHistory = (data || []).map(item => ({
+          ...item,
+          questions: typeof item.questions === 'string' ? JSON.parse(item.questions) : item.questions,
+          user_answers: typeof item.user_answers === 'string' ? JSON.parse(item.user_answers) : item.user_answers
+        }));
+
+        setHistory(parsedHistory);
+      } catch (err) {
+        console.error("Error fetching history:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchHistory();
+  }, []);
+
+  if (loading) return <div className="flex justify-center p-20"><Loader2 className="animate-spin text-sky-600" /></div>;
+
+  return (
+    <div className="space-y-6 animate-in fade-in duration-500 text-left">
+
+      <div>
+        <h2 className="text-3xl font-black text-slate-900 tracking-tight">Performance History</h2>
+        <p className="text-sm text-slate-400 font-bold uppercase tracking-widest">Review your past attempts & corrections</p>
+      </div>
+
+      <div className="space-y-4">
+        {history.length === 0 ? (
+          <p className="text-slate-400 italic">No previous test results found.</p>
+        ) : (
+          history.map((h) => (
+            <Card key={h.id} variant="interactive" className="flex justify-between items-center p-5" onClick={() => onSelectReview(h)}>
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-slate-50 text-slate-600 rounded-2xl"><Award className="w-5 h-5" /></div>
+                <div>
+                  <p className="font-black text-slate-900 uppercase tracking-tight">{h.exam_type}</p>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase">{new Date(h.completed_at).toLocaleDateString()} • {h.duration_minutes || 0} min</p>
+                </div>
+              </div>
+              <div className="text-right"><p className="text-xl font-black text-sky-600">{h.score}%</p></div>
+            </Card>
+          ))
+        )}
+      </div>
+    </div>
+  );
+}

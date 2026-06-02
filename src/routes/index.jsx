@@ -1,3 +1,4 @@
+// src/routes/index.jsx
 import Landing from '../pages/Landing.jsx';
 import ExamSetup from '../pages/ExamSetup.jsx';
 import ExamSession from '../pages/ExamSession.jsx';
@@ -6,9 +7,14 @@ import Auth from '../pages/Auth.jsx';
 import AuthLayout from '../layouts/AuthLayout.jsx';
 import Dashboard from '../pages/Dashboard.jsx'; 
 import Profile from '../pages/Profile.jsx';
-import { useExamSystem } from '../context/ExamContext.jsx';
+import ResultsHistory from '../pages/ResultsHistory.jsx';
+import ReviewSession from '../pages/ReviewSession.jsx';
+import { useExamSystem } from '../hooks/useExamSystem.js';
 
-export default function AppRouter({ currentView, setView, examDomains, isAuthenticated, onAuthenticate, resetToDashboard }) {
+export default function AppRouter({ 
+  currentView, setView, examDomains, isAuthenticated, 
+  onAuthenticate, resetToDashboard, activeResult, setActiveResult 
+}) {
   const { 
     config, setConfig, questions, initializeTestSession, 
     userAnswers, setUserAnswers, evaluateFinalAnswers, score 
@@ -32,6 +38,12 @@ export default function AppRouter({ currentView, setView, examDomains, isAuthent
     case 'profile':
       return <Profile setView={setView} />;
 
+    case 'history':
+      return <ResultsHistory setView={setView} onSelectReview={(result) => { setActiveResult(result); setView('review'); }} />;
+      
+    case 'review':
+      return <ReviewSession result={activeResult} setView={setView} />;
+
     case 'config':
       return <ExamSetup config={config} setConfig={setConfig} examDomains={examDomains} onBack={resetToDashboard} onStartSimulation={() => { initializeTestSession(config.examType, config.topic); setView('quiz'); }} />;
 
@@ -41,8 +53,8 @@ export default function AppRouter({ currentView, setView, examDomains, isAuthent
           questions={questions} 
           userAnswers={userAnswers} 
           setUserAnswers={setUserAnswers} 
+          examType={config.examType}
           onCompleteExam={(timeSpent) => { 
-            // Now passing the timeSpent from ExamSession to your evaluation logic
             evaluateFinalAnswers(timeSpent); 
             setView('results'); 
           }} 

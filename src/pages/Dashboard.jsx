@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Activity, ChevronRight, Loader2, User } from 'lucide-react';
+import { Activity, ChevronRight, Loader2, User, History } from 'lucide-react';
 import Card from '../components/common/Card.jsx';
 import { supabase } from '../lib/supabaseClient.js';
 
@@ -71,6 +71,24 @@ export default function Dashboard({ examDomains, onSelectExam, setView }) {
         </div>
       )}
 
+      {/* History Entry Point */}
+      <Card 
+        variant="interactive" 
+        onClick={() => setView('history')} 
+        className="flex items-center justify-between p-5 border-sky-100 bg-sky-50/50"
+      >
+        <div className="flex items-center gap-4">
+          <div className="p-3 bg-white text-sky-600 rounded-2xl shadow-sm">
+            <History className="w-5 h-5" />
+          </div>
+          <div>
+            <p className="font-black text-slate-900 uppercase tracking-tight">Performance History</p>
+            <p className="text-[10px] font-bold text-sky-600 uppercase">Review past questions & corrections</p>
+          </div>
+        </div>
+        <ChevronRight className="w-5 h-5 text-sky-400" />
+      </Card>
+
       {/* Simulator Selection */}
       <div className="space-y-4">
         <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 px-1">Available Simulators</h3>
@@ -78,7 +96,7 @@ export default function Dashboard({ examDomains, onSelectExam, setView }) {
           {Object.keys(examDomains || {}).map((domain) => (
             <Card key={domain} variant="interactive" onClick={() => onSelectExam(domain)} className="flex items-center justify-between">
               <div className="flex items-center gap-4">
-                <div className="p-3 bg-sky-50 text-sky-600 rounded-2xl"><Activity className="w-5 h-5" /></div>
+                <div className="p-3 bg-slate-50 text-slate-600 rounded-2xl"><Activity className="w-5 h-5" /></div>
                 <div><p className="font-black text-slate-900 uppercase tracking-tight">{domain}</p></div>
               </div>
               <ChevronRight className="w-5 h-5 text-slate-300" />

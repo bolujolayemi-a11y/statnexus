@@ -2,7 +2,7 @@
 // deno-lint-ignore-file no-unused-vars
 import { useState } from 'react';
 import { Brain, CheckCircle2, XCircle, Award } from 'lucide-react';
-import { useExamSystem } from '../context/ExamContext.jsx';
+import { useExamSystem } from '../hooks/useExamSystem.js';
 import { fetchGroqExplanation } from '../services/ai/groq.js';
 import OptionCard from '../components/exam/OptionCard.jsx';
 import Button from '../components/common/Button.jsx';

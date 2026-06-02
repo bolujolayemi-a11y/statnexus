@@ -1,8 +1,8 @@
 // src/context/ExamContext.jsx
-import { createContext, useContext } from 'react';
+import { createContext } from 'react';
 import { useExam } from '../hooks/useExam.js';
 
-const ExamContext = createContext(null);
+export const ExamContext = createContext(null);
 
 export function ExamProvider({ children }) {
   const examLifecycle = useExam();
@@ -12,12 +12,4 @@ export function ExamProvider({ children }) {
       {children}
     </ExamContext.Provider>
   );
-}
-
-export function useExamSystem() {
-  const context = useContext(ExamContext);
-  if (!context) {
-    throw new Error("useExamSystem must be executed safely underneath an ExamProvider matrix wrapper.");
-  }
-  return context;
 }

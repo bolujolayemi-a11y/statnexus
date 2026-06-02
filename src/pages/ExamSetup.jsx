@@ -1,6 +1,6 @@
 // src/pages/ExamSetup.jsx
 import { Stethoscope } from 'lucide-react';
-import { useExamSystem } from '../context/ExamContext.jsx';
+import { useExamSystem } from '../hooks/useExamSystem.js';
 import Card from '../components/common/Card.jsx';
 import Button from '../components/common/Button.jsx';
 
