@@ -18,6 +18,6 @@ export default defineConfig({
         }
       }
     },
-    chunkSizeWarningLimit: 600 // Prevents the warning for files slightly over 500kb
+    chunkSizeWarningLimit: 600 
   }
 })
