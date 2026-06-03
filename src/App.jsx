@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { supabase } from './lib/supabaseClient.js'; // Ensure this is the file with persistSession: true
 import { ExamProvider } from './context/ExamContext.jsx';
 import DashboardLayout from './layouts/DashboardLayout.jsx';
 import AppRouter from './routes/index.jsx';
@@ -6,6 +7,7 @@ import AppRouter from './routes/index.jsx';
 export default function App() {
   const [view, setView] = useState('welcome');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [loading, setLoading] = useState(true); // Prevents flash of unauthenticated UI
   const [activeResult, setActiveResult] = useState(null);
 
   const examDomains = {
@@ -14,12 +16,27 @@ export default function App() {
     'UK-NMC-CBT': ['Being an Accountable Professional', 'Promoting Health & Preventing Ill Health', 'Assessing Needs & Planning Care', 'Providing & Evaluating Care', 'Leading & Managing Care', 'Care Across Lifespan - Integrated', 'OSCE Skills (Practical Exam Focus)']
   };
 
+  useEffect(() => {
+    // 1. Initial Session Check
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setIsAuthenticated(!!session);
+      if (session) setView('dashboard');
+      setLoading(false);
+    });
+
+    // 2. Listen for login/logout events
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsAuthenticated(!!session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
   const handleAuthenticate = () => {
     setIsAuthenticated(true);
     setView('dashboard');
   };
 
-  // Logic to determine where "Back" should go based on current view
   const getBackNavigation = () => {
     switch (view) {
       case 'review': return () => setView('history');
@@ -36,12 +53,19 @@ export default function App() {
     }
   };
 
+  // Show a minimal loading state while Supabase checks the storage
+  if (loading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+
   return (
     <ExamProvider>
       <DashboardLayout 
-        onBack={getBackNavigation()} // Dynamic back navigation
+        onBack={getBackNavigation()}
         isAuthenticated={isAuthenticated}
-        onLogOut={() => { setIsAuthenticated(false); setView('welcome'); }}
+        onLogOut={async () => { 
+          await supabase.auth.signOut();
+          setIsAuthenticated(false); 
+          setView('welcome'); 
+        }}
         setView={setView}
       >
         <AppRouter 
