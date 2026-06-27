@@ -10,7 +10,7 @@ export function useExam() {
   const [config, setConfig] = useState({
     examType: 'NCLEX-RN',
     topic: 'Management of Care',
-    count: 10
+    count: 20
   });
 
   const initializeTestSession = (examType, topic) => {

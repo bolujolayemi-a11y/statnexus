@@ -20,7 +20,7 @@ export default function Landing({ examDomains, onSelectExam, isAuthenticated, se
             </div>
             
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-tight">
-              Pass your nursing exams with <span className="text-sky-400">confidence.</span>
+              Pass your Nursing Exams with <span className="text-sky-400">Confidence.</span>
             </h1>
 
             <p className="text-sm sm:text-base lg:text-lg text-slate-300 leading-relaxed font-medium">

@@ -21,7 +21,7 @@ export default function ExamSetup({ examDomains, onBack, onStartSimulation }) {
         </div>
         <div className="text-right">
           <p className="text-[10px] font-black text-sky-600 uppercase tracking-widest">Item Limit</p>
-          <p className="text-xl font-black text-sky-900">10</p>
+          <p className="text-xl font-black text-sky-900">20</p>
         </div>
       </Card>
 

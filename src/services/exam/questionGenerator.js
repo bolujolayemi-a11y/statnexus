@@ -19,5 +19,5 @@ export function generateLocalSession(examType, topic) {
 
   // 4. Merge and slice - the shuffle happens here by mixing the two randomized pools
   // Then we take the first 10. This guarantees no duplicates for this specific session.
-  return [...shuffledPriority, ...shuffledOthers].slice(0, 10);
+  return [...shuffledPriority, ...shuffledOthers].slice(0, 20);
 }
