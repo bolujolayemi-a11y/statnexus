@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabaseClient.js';
-import { ArrowLeft, Loader2, Award } from 'lucide-react';
+import { apiFetch } from '../lib/api.js';
+import { Award, Loader2 } from 'lucide-react';
 import Card from '../components/common/Card.jsx';
-import Button from '../components/common/Button.jsx';
 
 export default function ResultsHistory({ setView, onSelectReview }) {
   const [history, setHistory] = useState([]);
@@ -12,18 +11,7 @@ export default function ResultsHistory({ setView, onSelectReview }) {
     async function fetchHistory() {
       try {
         setLoading(true);
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
-
-        // Filter out rows where questions are null to prevent crashes
-        const { data, error } = await supabase
-          .from('test_results')
-          .select('id, exam_type, score, duration_minutes, completed_at, questions, user_answers')
-          .eq('user_id', user.id)
-          .not('questions', 'is', null) 
-          .order('completed_at', { ascending: false });
-
-        if (error) throw error;
+        const data = await apiFetch('/test-results?withQuestions=true');
 
         const parsedHistory = (data || []).map(item => ({
           ...item,

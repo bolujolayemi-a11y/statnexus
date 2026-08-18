@@ -1,6 +1,7 @@
 // src/pages/ExamSession.jsx
 import { useState, useRef } from 'react';
-import { supabase } from '../lib/supabaseClient.js';
+import { apiFetch } from '../lib/api.js';
+import { auth } from '../lib/auth.js';
 import ProgressBar from '../components/exam/ProgressBar.jsx';
 import Timer from '../components/exam/Timer.jsx';
 import QuestionCard from '../components/exam/QuestionCard.jsx';
@@ -26,34 +27,31 @@ export default function ExamSession({
     if (isSubmitting) return;
     setIsSubmitting(true);
 
-    // 1. Calculate Score
     let correctCount = 0;
     questions.forEach((q, idx) => {
       if (userAnswers[idx] === q.correct) correctCount++;
     });
     const finalScore = Math.round((correctCount / questions.length) * 100);
 
-    // 2. Save to Supabase
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user } } = await auth.getUser();
       if (user) {
-        await supabase.from('test_results').insert([
-          {
-            user_id: user.id,
+        await apiFetch('/test-results', {
+          method: 'POST',
+          body: JSON.stringify({
             exam_type: examType || 'General',
             score: finalScore,
             questions_count: questions.length,
             duration_minutes: timeSpentMins,
             user_answers: userAnswers,
-            questions: questions
-          }
-        ]);
+            questions: questions,
+          }),
+        });
       }
     } catch (err) {
       console.error("Failed to save result:", err);
     } finally {
       setIsSubmitting(false);
-      // 3. Finalize simulation
       onCompleteExam(timeSpentMins);
     }
   };
@@ -70,7 +68,6 @@ export default function ExamSession({
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500 text-left">
-      {/* Header UI */}
       <div className="flex justify-between items-center bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
         <span className="text-[10px] font-black bg-sky-50 text-sky-600 px-3 py-1.5 rounded-xl uppercase tracking-widest">
           Live Simulation

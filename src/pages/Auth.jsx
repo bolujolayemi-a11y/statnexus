@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
-import { supabase } from "../lib/supabaseClient.js";
+import { auth } from "../lib/auth.js";
 import Button from "../components/common/Button.jsx";
 
 export default function Auth({ onAuthenticate, setView }) {
@@ -15,18 +15,16 @@ export default function Auth({ onAuthenticate, setView }) {
 
     try {
       if (mode === "register") {
-        const { error } = await supabase.auth.signUp({
+        await auth.signUp({
           email: formData.email,
           password: formData.password,
           options: { data: { full_name: formData.fullName } }
         });
-        if (error) throw error;
       } else {
-        const { error } = await supabase.auth.signInWithPassword({
+        await auth.signInWithPassword({
           email: formData.email,
           password: formData.password
         });
-        if (error) throw error;
       }
       onAuthenticate();
       setView('dashboard');

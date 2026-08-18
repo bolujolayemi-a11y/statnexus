@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { User, Save, Loader2, CheckCircle2, AlertTriangle, Trash2 } from 'lucide-react';
-import { supabase } from '../lib/supabaseClient.js';
+import { User, Save, Loader2, CheckCircle2, Trash2 } from 'lucide-react';
+import { apiFetch } from '../lib/api.js';
+import { auth } from '../lib/auth.js';
 import Card from '../components/common/Card.jsx';
 import Button from '../components/common/Button.jsx';
 
@@ -12,31 +13,42 @@ export default function Profile({ setView }) {
 
   useEffect(() => {
     async function loadSettings() {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      const { data } = await supabase.from('profiles').select('full_name').eq('id', user.id).single();
-      if (data) setFormData({ full_name: data.full_name });
-      setLoading(false);
+      try {
+        const data = await apiFetch('/profile');
+        if (data) setFormData({ full_name: data.full_name || '' });
+      } catch (err) {
+        console.error('Failed to load profile:', err);
+      } finally {
+        setLoading(false);
+      }
     }
     loadSettings();
   }, []);
 
   const handleUpdate = async () => {
     setSaving(true);
-    const { data: { user } } = await supabase.auth.getUser();
-    await supabase.from('profiles').update(formData).eq('id', user.id);
-    setMessage('Profile updated!');
-    setSaving(false);
-    setTimeout(() => setMessage(''), 3000);
+    try {
+      await apiFetch('/profile', {
+        method: 'PATCH',
+        body: JSON.stringify(formData),
+      });
+      setMessage('Profile updated!');
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setSaving(false);
+      setTimeout(() => setMessage(''), 3000);
+    }
   };
 
   const handleDeleteAccount = async () => {
     if (!confirm("Are you absolutely sure? This will permanently delete your data.")) return;
-    const { data: { user } } = await supabase.auth.getUser();
-    // This removes the user from the auth system; you'll need a trigger 
-    // in Supabase to clean up the 'profiles' and 'test_results' tables.
-    await supabase.auth.admin.deleteUser(user.id); 
-    window.location.reload();
+    try {
+      await auth.deleteAccount();
+      window.location.reload();
+    } catch (err) {
+      alert(err.message);
+    }
   };
 
   if (loading) return <div className="flex justify-center p-20"><Loader2 className="animate-spin text-sky-600" /></div>;
@@ -69,7 +81,6 @@ export default function Profile({ setView }) {
         )}
       </Card>
 
-      {/* Danger Zone */}
       <div className="pt-6 border-t border-slate-100 space-y-4">
         <p className="text-[10px] font-black uppercase text-slate-400">Danger Zone</p>
         

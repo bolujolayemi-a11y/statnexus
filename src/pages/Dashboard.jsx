@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Activity, ChevronRight, Loader2, User, History } from 'lucide-react';
 import Card from '../components/common/Card.jsx';
-import { supabase } from '../lib/supabaseClient.js';
+import { apiFetch } from '../lib/api.js';
 
 export default function Dashboard({ examDomains, onSelectExam, setView }) {
   const [loading, setLoading] = useState(true);
@@ -10,30 +10,31 @@ export default function Dashboard({ examDomains, onSelectExam, setView }) {
 
   useEffect(() => {
     async function fetchData() {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      try {
+        const [profileData, results] = await Promise.all([
+          apiFetch('/profile'),
+          apiFetch('/test-results'),
+        ]);
 
-      const [profileRes, resultsRes] = await Promise.all([
-        supabase.from('profiles').select('full_name, account_tier').eq('id', user.id).single(),
-        supabase.from('test_results').select('score, duration_minutes').eq('user_id', user.id)
-      ]);
+        if (profileData) {
+          setProfile({ name: profileData.full_name, tier: profileData.account_tier });
+        }
 
-      if (profileRes.data) {
-        setProfile({ name: profileRes.data.full_name, tier: profileRes.data.account_tier });
+        if (results && results.length > 0) {
+          const totalScore = results.reduce((acc, curr) => acc + (Number(curr.score) || 0), 0);
+          const totalTime = results.reduce((acc, curr) => acc + (Number(curr.duration_minutes) || 0), 0);
+
+          setStats({ 
+            avg: Math.round(totalScore / results.length), 
+            sprints: results.length, 
+            time: totalTime 
+          });
+        }
+      } catch (err) {
+        console.error('Failed to load dashboard:', err);
+      } finally {
+        setLoading(false);
       }
-
-      if (resultsRes.data && resultsRes.data.length > 0) {
-        const results = resultsRes.data;
-        const totalScore = results.reduce((acc, curr) => acc + (Number(curr.score) || 0), 0);
-        const totalTime = results.reduce((acc, curr) => acc + (Number(curr.duration_minutes) || 0), 0);
-
-        setStats({ 
-          avg: Math.round(totalScore / results.length), 
-          sprints: results.length, 
-          time: totalTime 
-        });
-      }
-      setLoading(false);
     }
     fetchData();
   }, []);
@@ -89,7 +90,6 @@ export default function Dashboard({ examDomains, onSelectExam, setView }) {
         <ChevronRight className="w-5 h-5 text-sky-400" />
       </Card>
 
-      {/* Simulator Selection */}
       <div className="space-y-4">
         <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 px-1">Available Simulators</h3>
         <div className="grid gap-4">

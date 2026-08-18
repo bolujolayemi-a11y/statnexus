@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase } from './lib/supabaseClient.js'; // Ensure this is the file with persistSession: true
+import { auth } from './lib/auth.js';
 import { ExamProvider } from './context/ExamContext.jsx';
 import DashboardLayout from './layouts/DashboardLayout.jsx';
 import AppRouter from './routes/index.jsx';
@@ -7,7 +7,7 @@ import AppRouter from './routes/index.jsx';
 export default function App() {
   const [view, setView] = useState('welcome');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [loading, setLoading] = useState(true); // Prevents flash of unauthenticated UI
+  const [loading, setLoading] = useState(true);
   const [activeResult, setActiveResult] = useState(null);
 
   const examDomains = {
@@ -17,15 +17,13 @@ export default function App() {
   };
 
   useEffect(() => {
-    // 1. Initial Session Check
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    auth.getSession().then(({ data: { session } }) => {
       setIsAuthenticated(!!session);
       if (session) setView('dashboard');
       setLoading(false);
     });
 
-    // 2. Listen for login/logout events
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = auth.onAuthStateChange((_event, session) => {
       setIsAuthenticated(!!session);
     });
 
@@ -53,7 +51,6 @@ export default function App() {
     }
   };
 
-  // Show a minimal loading state while Supabase checks the storage
   if (loading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
 
   return (
@@ -62,7 +59,7 @@ export default function App() {
         onBack={getBackNavigation()}
         isAuthenticated={isAuthenticated}
         onLogOut={async () => { 
-          await supabase.auth.signOut();
+          await auth.signOut();
           setIsAuthenticated(false); 
           setView('welcome'); 
         }}
