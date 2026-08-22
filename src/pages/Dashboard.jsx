@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Activity, ChevronRight, Loader2, User, History } from 'lucide-react';
+import { Activity, ChevronRight, Loader2, User, History, Sparkles } from 'lucide-react';
 import Card from '../components/common/Card.jsx';
 import { apiFetch } from '../lib/api.js';
 
@@ -88,6 +88,24 @@ export default function Dashboard({ examDomains, onSelectExam, setView }) {
           </div>
         </div>
         <ChevronRight className="w-5 h-5 text-sky-400" />
+      </Card>
+
+      {/* AI Notes Entry Point */}
+      <Card 
+        variant="interactive" 
+        onClick={() => setView('ai-notes')} 
+        className="flex items-center justify-between p-5 border-purple-100 bg-purple-50/50"
+      >
+        <div className="flex items-center gap-4">
+          <div className="p-3 bg-white text-purple-600 rounded-2xl shadow-sm">
+            <Sparkles className="w-5 h-5" />
+          </div>
+          <div>
+            <p className="font-black text-slate-900 uppercase tracking-tight">AI Study Notes</p>
+            <p className="text-[10px] font-bold text-purple-600 uppercase">Generate visual study notes for any topic</p>
+          </div>
+        </div>
+        <ChevronRight className="w-5 h-5 text-purple-400" />
       </Card>
 
       <div className="space-y-4">

@@ -16,9 +16,9 @@ function getPool() {
         ? false
         : { rejectUnauthorized: false }, // For CockroachDB Cloud, this handles SSL properly
       // Serverless-optimized settings
-      max: 1, // Limit connections for serverless
+      max: 5, // Increased from 1 for better performance
       idleTimeoutMillis: 30000, // Close idle connections after 30s
-      connectionTimeoutMillis: 10000, // Timeout after 10s
+      connectionTimeoutMillis: 15000, // Increased timeout from 10s to 15s
     });
   }
   return poolInstance;

@@ -9,6 +9,7 @@ import Dashboard from '../pages/Dashboard.jsx';
 import Profile from '../pages/Profile.jsx';
 import ResultsHistory from '../pages/ResultsHistory.jsx';
 import ReviewSession from '../pages/ReviewSession.jsx';
+import AINotes from '../pages/AINotes.jsx';
 import { useExamSystem } from '../hooks/useExamSystem.js';
 
 export default function AppRouter({ 
@@ -43,6 +44,9 @@ export default function AppRouter({
       
     case 'review':
       return <ReviewSession result={activeResult} setView={setView} />;
+
+    case 'ai-notes':
+      return <AINotes setView={setView} />;
 
     case 'config':
       return <ExamSetup config={config} setConfig={setConfig} examDomains={examDomains} onBack={resetToDashboard} onStartSimulation={() => { initializeTestSession(config.examType, config.topic); setView('quiz'); }} />;

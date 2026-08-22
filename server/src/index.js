@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import authRoutes from './routes/auth.js';
 import profileRoutes from './routes/profile.js';
 import testResultsRoutes from './routes/testResults.js';
+import aiNotesRoutes from './routes/aiNotes.js';
 
 dotenv.config();
 
@@ -22,6 +23,7 @@ app.get('/health', (_req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/test-results', testResultsRoutes);
+app.use('/api/ai-notes', aiNotesRoutes);
 
 app.use((err, _req, res, _next) => {
   console.error(err);
@@ -29,7 +31,7 @@ app.use((err, _req, res, _next) => {
 });
 
 // For local development
-const PORT = process.env.PORT || 3002;
+const PORT = process.env.PORT || 3003;
 app.listen(PORT, () => {
   console.log(`StatNexus API running on http://localhost:${PORT}`);
 });
