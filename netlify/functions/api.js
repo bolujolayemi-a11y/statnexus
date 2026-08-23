@@ -59,42 +59,60 @@ app.get('/api/test-db', async (_req, res) => {
 // Simple login endpoint
 app.post('/api/auth/login', async (req, res) => {
   try {
-    console.log('Login attempt:', { email: req.body.email });
+    console.log('=== LOGIN ATTEMPT ===');
+    console.log('Request body:', { email: req.body.email, hasPassword: !!req.body.password });
+    console.log('Environment check:', {
+      hasDbUrl: !!process.env.DATABASE_URL,
+      hasJwtSecret: !!process.env.JWT_SECRET,
+      dbUrlPrefix: process.env.DATABASE_URL?.substring(0, 20) + '...'
+    });
     
     const { email, password } = req.body;
     
     if (!email || !password) {
+      console.log('Missing credentials');
       return res.status(400).json({ error: 'Email and password required' });
     }
 
+    console.log('Getting database pool...');
     const currentPool = getPool();
+    
+    console.log('Querying database for user...');
     const result = await currentPool.query(
       'SELECT id, email, password_hash, full_name FROM users WHERE email = $1',
       [email]
     );
 
+    console.log('Query result:', { userCount: result.rows.length });
+
     if (result.rows.length === 0) {
+      console.log('User not found');
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
     const user = result.rows[0];
+    console.log('Comparing password...');
     const isValidPassword = await bcrypt.compare(password, user.password_hash);
 
     if (!isValidPassword) {
+      console.log('Invalid password');
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
     const jwtSecret = process.env.JWT_SECRET;
     if (!jwtSecret) {
+      console.log('JWT_SECRET missing');
       throw new Error('JWT_SECRET environment variable is not set');
     }
 
+    console.log('Generating token...');
     const token = jwt.sign(
       { userId: user.id, email: user.email },
       jwtSecret,
       { expiresIn: '7d' }
     );
 
+    console.log('Login successful');
     res.json({
       token,
       user: {
@@ -104,10 +122,16 @@ app.post('/api/auth/login', async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Login error:', error);
+    console.error('=== LOGIN ERROR ===');
+    console.error('Error name:', error.name);
+    console.error('Error message:', error.message);
+    console.error('Error stack:', error.stack);
+    console.error('Full error:', error);
+    
     res.status(500).json({ 
       error: 'Login failed', 
-      details: error.message 
+      details: error.message,
+      errorType: error.name
     });
   }
 });
