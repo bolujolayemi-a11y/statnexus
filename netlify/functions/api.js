@@ -103,9 +103,8 @@ app.post('/api/auth/login', async (req, res) => {
     const currentPool = getPool();
     
     console.log('Querying database for user:', email);
-    // Use generic SELECT to handle any schema
     const result = await currentPool.query(
-      'SELECT * FROM users WHERE email = $1',
+      'SELECT id, email, password_hash FROM users WHERE email = $1',
       [email]
     );
 
@@ -117,22 +116,29 @@ app.post('/api/auth/login', async (req, res) => {
     }
 
     const user = result.rows[0];
-    console.log('User found:', { id: user.id, email: user.email, hasPasswordHash: !!user.password_hash, userKeys: Object.keys(user) });
-    
-    // Handle different column names
-    const passwordHash = user.password_hash || user.password_hash || user.password;
-    if (!passwordHash) {
-      console.log('No password hash found in user record');
-      return res.status(500).json({ error: 'Database schema error', details: 'No password field found' });
-    }
+    console.log('User found:', { id: user.id, email: user.email, hasPasswordHash: !!user.password_hash });
     
     console.log('Comparing password...');
-    const isValidPassword = await bcrypt.compare(password, passwordHash);
+    const isValidPassword = await bcrypt.compare(password, user.password_hash);
     console.log('Password comparison result:', isValidPassword);
 
     if (!isValidPassword) {
       console.log('Invalid password');
       return res.status(401).json({ error: 'Invalid credentials', details: 'Incorrect password' });
+    }
+
+    // Get user's full name from profiles table
+    let fullName = email.split('@')[0];
+    try {
+      const profileResult = await currentPool.query(
+        'SELECT full_name FROM profiles WHERE id = $1',
+        [user.id]
+      );
+      if (profileResult.rows.length > 0 && profileResult.rows[0].full_name) {
+        fullName = profileResult.rows[0].full_name;
+      }
+    } catch (profileError) {
+      console.log('Profile query failed, using email as name:', profileError.message);
     }
 
     const jwtSecret = process.env.JWT_SECRET;
@@ -150,11 +156,18 @@ app.post('/api/auth/login', async (req, res) => {
 
     console.log('Login successful for:', email);
     res.json({
-      token,
+      session: {
+        access_token: token,
+        user: {
+          id: user.id,
+          email: user.email,
+          fullName: fullName
+        }
+      },
       user: {
         id: user.id,
         email: user.email,
-        fullName: user.full_name || user.fullname || user.name || email.split('@')[0]
+        fullName: fullName
       }
     });
   } catch (error) {
@@ -168,6 +181,64 @@ app.post('/api/auth/login', async (req, res) => {
       details: error.message,
       errorType: error.name
     });
+  }
+});
+
+// Get current user endpoint
+app.get('/api/auth/me', async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'No token provided' });
+    }
+
+    const token = authHeader.substring(7);
+    const jwtSecret = process.env.JWT_SECRET;
+    if (!jwtSecret) {
+      throw new Error('JWT_SECRET environment variable is not set');
+    }
+
+    const decoded = jwt.verify(token, jwtSecret);
+    const currentPool = getPool();
+    
+    const result = await currentPool.query(
+      'SELECT id, email FROM users WHERE id = $1',
+      [decoded.userId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(401).json({ error: 'User not found' });
+    }
+
+    const user = result.rows[0];
+    
+    // Get full name from profiles
+    let fullName = user.email.split('@')[0];
+    try {
+      const profileResult = await currentPool.query(
+        'SELECT full_name FROM profiles WHERE id = $1',
+        [user.id]
+      );
+      if (profileResult.rows.length > 0 && profileResult.rows[0].full_name) {
+        fullName = profileResult.rows[0].full_name;
+      }
+    } catch (profileError) {
+      console.log('Profile query failed:', profileError.message);
+    }
+
+    res.json({
+      user: {
+        id: user.id,
+        email: user.email,
+        fullName: fullName
+      }
+    });
+  } catch (error) {
+    console.error('Get user error:', error);
+    if (error.name === 'JsonWebTokenError') {
+      return res.status(401).json({ error: 'Invalid token' });
+    }
+    res.status(500).json({ error: 'Failed to get user', details: error.message });
   }
 });
 
@@ -206,8 +277,8 @@ app.post('/api/auth/register', async (req, res) => {
 
     console.log('Creating user...');
     const result = await currentPool.query(
-      'INSERT INTO users (id, email, password_hash, full_name, created_at) VALUES (gen_random_uuid(), $1, $2, $3, NOW()) RETURNING id, email, full_name',
-      [email, passwordHash, fullName]
+      'INSERT INTO users (id, email, password_hash, created_at) VALUES (gen_random_uuid(), $1, $2, NOW()) RETURNING id, email',
+      [email, passwordHash]
     );
 
     console.log('Creating profile...');
@@ -231,11 +302,18 @@ app.post('/api/auth/register', async (req, res) => {
 
     console.log('Registration successful');
     res.json({
-      token,
+      session: {
+        access_token: token,
+        user: {
+          id: result.rows[0].id,
+          email: result.rows[0].email,
+          fullName: fullName
+        }
+      },
       user: {
         id: result.rows[0].id,
         email: result.rows[0].email,
-        fullName: result.rows[0].full_name
+        fullName: fullName
       }
     });
   } catch (error) {
