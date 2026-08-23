@@ -15,7 +15,7 @@ app.use(cors({
 app.use(express.json({ limit: '2mb' }));
 
 // Initialize Groq
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+const groq = new Groq({ apiKey: process.env.VITE_GROQ_API_KEY });
 
 // Database connection
 let pool;
