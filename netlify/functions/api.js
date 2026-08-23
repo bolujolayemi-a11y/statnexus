@@ -4,6 +4,7 @@ import cors from 'cors';
 import { Pool } from 'pg';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import Groq from 'groq-sdk';
 
 const app = express();
 
@@ -12,6 +13,9 @@ app.use(cors({
   credentials: true,
 }));
 app.use(express.json({ limit: '2mb' }));
+
+// Initialize Groq
+const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 // Database connection
 let pool;
@@ -184,26 +188,36 @@ app.post('/api/auth/login', async (req, res) => {
   }
 });
 
-// Get current user endpoint
-app.get('/api/auth/me', async (req, res) => {
+// Middleware to verify JWT token
+function authenticateToken(req, res, next) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'No token provided' });
+  }
+
+  const token = authHeader.substring(7);
+  const jwtSecret = process.env.JWT_SECRET;
+  if (!jwtSecret) {
+    return res.status(500).json({ error: 'JWT_SECRET not configured' });
+  }
+
   try {
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({ error: 'No token provided' });
-    }
-
-    const token = authHeader.substring(7);
-    const jwtSecret = process.env.JWT_SECRET;
-    if (!jwtSecret) {
-      throw new Error('JWT_SECRET environment variable is not set');
-    }
-
     const decoded = jwt.verify(token, jwtSecret);
+    req.user = decoded;
+    next();
+  } catch (error) {
+    return res.status(401).json({ error: 'Invalid token' });
+  }
+}
+
+// Get current user endpoint
+app.get('/api/auth/me', authenticateToken, async (req, res) => {
+  try {
     const currentPool = getPool();
     
     const result = await currentPool.query(
       'SELECT id, email FROM users WHERE id = $1',
-      [decoded.userId]
+      [req.user.userId]
     );
 
     if (result.rows.length === 0) {
@@ -239,6 +253,97 @@ app.get('/api/auth/me', async (req, res) => {
       return res.status(401).json({ error: 'Invalid token' });
     }
     res.status(500).json({ error: 'Failed to get user', details: error.message });
+  }
+});
+
+// Profile endpoints
+app.get('/api/profile', authenticateToken, async (req, res) => {
+  try {
+    const currentPool = getPool();
+    
+    const result = await currentPool.query(
+      'SELECT id, email FROM users WHERE id = $1',
+      [req.user.userId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const user = result.rows[0];
+    
+    // Get profile data
+    let profileData = { full_name: user.email.split('@')[0], account_tier: 'STANDARD' };
+    try {
+      const profileResult = await currentPool.query(
+        'SELECT full_name, account_tier FROM profiles WHERE id = $1',
+        [user.id]
+      );
+      if (profileResult.rows.length > 0) {
+        profileData = {
+          full_name: profileResult.rows[0].full_name || user.email.split('@')[0],
+          account_tier: profileResult.rows[0].account_tier || 'STANDARD'
+        };
+      }
+    } catch (profileError) {
+      console.log('Profile query failed:', profileError.message);
+    }
+
+    res.json(profileData);
+  } catch (error) {
+    console.error('Profile error:', error);
+    res.status(500).json({ error: 'Failed to fetch profile', details: error.message });
+  }
+});
+
+app.put('/api/profile', authenticateToken, async (req, res) => {
+  try {
+    const { full_name, account_tier } = req.body;
+    const currentPool = getPool();
+    
+    await currentPool.query(
+      'UPDATE profiles SET full_name = $1, account_tier = $2, updated_at = NOW() WHERE id = $3',
+      [full_name, account_tier, req.user.userId]
+    );
+
+    res.json({ full_name, account_tier });
+  } catch (error) {
+    console.error('Profile update error:', error);
+    res.status(500).json({ error: 'Failed to update profile', details: error.message });
+  }
+});
+
+// Test results endpoints
+app.get('/api/test-results', authenticateToken, async (req, res) => {
+  try {
+    const currentPool = getPool();
+    
+    const result = await currentPool.query(
+      'SELECT id, user_id, score, duration_minutes, created_at FROM test_results WHERE user_id = $1 ORDER BY created_at DESC',
+      [req.user.userId]
+    );
+
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Test results error:', error);
+    res.status(500).json({ error: 'Failed to fetch test results', details: error.message });
+  }
+});
+
+app.post('/api/test-results', authenticateToken, async (req, res) => {
+  try {
+    const { score, duration_minutes, exam_type, questions, user_answers } = req.body;
+    const currentPool = getPool();
+    
+    const result = await currentPool.query(
+      'INSERT INTO test_results (id, user_id, score, duration_minutes, exam_type, questions, user_answers, created_at) VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, NOW()) RETURNING *',
+      [req.user.userId, score, duration_minutes, exam_type, JSON.stringify(questions), JSON.stringify(user_answers)]
+    );
+
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Test result creation error:', error);
+    res.status(500).json({ error: 'Failed to create test result', details: error.message });
   }
 });
 
@@ -327,6 +432,132 @@ app.post('/api/auth/register', async (req, res) => {
       details: error.message,
       errorType: error.name
     });
+  }
+});
+
+// AI Notes endpoints
+const NOTE_TEMPLATES = {
+  drug: {
+    sections: ['drug_class', 'mechanism', 'indications', 'contraindications', 'routes', 'dosage', 'side_effects', 'toxicity_signs', 'antidote', 'nursing_responsibilities', 'golden_point'],
+    icon: '💊'
+  },
+  organ: {
+    sections: ['location', 'anatomy', 'functions', 'blood_supply', 'innervation', 'physiology', 'clinical_relevance', 'common_disorders', 'golden_point'],
+    icon: '🫀'
+  },
+  instrument: {
+    sections: ['what_it_is', 'types', 'parts', 'indications', 'contraindications', 'equipment', 'procedure', 'precautions', 'complications', 'nursing_responsibilities', 'golden_point'],
+    icon: '🩺'
+  },
+  disease: {
+    sections: ['definition', 'causative_organism', 'transmission', 'risk_factors', 'pathophysiology', 'signs_symptoms', 'investigations', 'treatment', 'complications', 'prevention', 'nursing_management', 'golden_point'],
+    icon: '🦠'
+  },
+  procedure: {
+    sections: ['definition', 'indications', 'preparation', 'equipment', 'procedure_steps', 'post_procedure_care', 'complications', 'documentation', 'nursing_responsibilities', 'golden_point'],
+    icon: '💉'
+  },
+  lab_test: {
+    sections: ['definition', 'purpose', 'normal_values', 'abnormal_findings', 'clinical_significance', 'nursing_implications', 'patient_preparation', 'golden_point'],
+    icon: '🧪'
+  },
+  emergency: {
+    sections: ['definition', 'recognition', 'immediate_actions', 'secondary_assessment', 'treatment', 'medications', 'monitoring', 'documentation', 'golden_point'],
+    icon: '🚑'
+  },
+  nursing_concept: {
+    sections: ['definition', 'importance', 'principles', 'application', 'assessment', 'interventions', 'evaluation', 'golden_point'],
+    icon: '📋'
+  }
+};
+
+async function classifyTopic(topic) {
+  try {
+    const response = await groq.chat.completions.create({
+      model: 'openai/gpt-oss-120b',
+      messages: [
+        {
+          role: 'system',
+          content: `You are a medical classification expert. Classify the given nursing/medical topic into one of these categories: drug, organ, instrument, disease, procedure, lab_test, emergency, nursing_concept. Return ONLY the category name as a single word.`
+        },
+        {
+          role: 'user',
+          content: topic
+        }
+      ],
+      temperature: 0.1,
+      max_tokens: 10
+    });
+
+    const classification = response.choices[0].message.content.toLowerCase().trim();
+    return { type: classification, template: NOTE_TEMPLATES[classification] || NOTE_TEMPLATES.nursing_concept };
+  } catch (error) {
+    console.error('Classification error:', error);
+    return { type: 'nursing_concept', template: NOTE_TEMPLATES.nursing_concept };
+  }
+}
+
+async function generateStructuredNote(topic, classification) {
+  const template = classification.template;
+  const sections = template.sections.join(', ');
+
+  const response = await groq.chat.completions.create({
+    model: 'openai/gpt-oss-120b',
+    messages: [
+      {
+        role: 'system',
+        content: `You are a nursing education expert. Generate a comprehensive study note for the topic: "${topic}". 
+        
+        The note should be a JSON object with this exact structure:
+        {
+          "title": "Topic Title (uppercase)",
+          "type": "${classification.type}",
+          "icon": "${template.icon}",
+          "sections": [
+            {
+              "title": "Section Title (title case)",
+              "content": ["Detailed content as bullet points", "More details", "Key points"]
+            }
+          ],
+          "golden_point": "One memorable exam tip or clinical pearl"
+        }
+
+        Sections to include: ${sections}
+
+        Keep content concise, exam-focused, and clinically accurate. Each section should have 3-5 bullet points. Return ONLY valid JSON.`
+      },
+      {
+        role: 'user',
+        content: topic
+      }
+    ],
+    temperature: 0.3,
+    max_tokens: 2000,
+    response_format: { type: 'json_object' }
+  });
+
+  return JSON.parse(response.choices[0].message.content);
+}
+
+app.post('/api/ai-notes/generate', authenticateToken, async (req, res) => {
+  try {
+    const { topic } = req.body;
+
+    if (!topic || topic.trim().length === 0) {
+      return res.status(400).json({ error: 'Topic is required' });
+    }
+
+    const classification = await classifyTopic(topic);
+    const note = await generateStructuredNote(topic, classification);
+    
+    res.json({
+      ...note,
+      generated_at: new Date().toISOString(),
+      topic
+    });
+  } catch (err) {
+    console.error('AI Notes generation error:', err);
+    res.status(500).json({ error: 'Failed to generate study note', details: err.message });
   }
 });
 
