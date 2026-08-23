@@ -2,7 +2,7 @@ import { BookOpen, Brain, BarChart3, Clock, Sparkles, Zap, Shield, Users, ArrowR
 import Button from "../components/common/Button.jsx";
 import Card from "../components/common/Card.jsx";
 
-export default function Landing({ examDomains, onSelectExam, isAuthenticated, setView }) {
+export default function Landing({ examDomains, onSelectExam, isAuthenticated, setView, navigateTo }) {
   
   const scrollToSelection = () => {
     const element = document.getElementById("board-selection-matrix");
@@ -17,7 +17,9 @@ export default function Landing({ examDomains, onSelectExam, isAuthenticated, se
   const handleGetStarted = () => {
     if (isAuthenticated) {
       scrollToSelection();
-    } else if (typeof setView === 'function') {
+    } else if (navigateTo) {
+      navigateTo('auth', { mode: 'register' });
+    } else {
       setView('auth');
     }
   };

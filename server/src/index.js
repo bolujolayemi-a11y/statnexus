@@ -30,11 +30,13 @@ app.use((err, _req, res, _next) => {
   res.status(500).json({ error: 'Internal server error' });
 });
 
-// For local development
-const PORT = process.env.PORT || 3003;
-app.listen(PORT, () => {
-  console.log(`StatNexus API running on http://localhost:${PORT}`);
-});
+// Only start the server if this is not a serverless environment
+if (process.env.NODE_ENV !== 'production' || !process.env.NETLIFY) {
+  const PORT = process.env.PORT || 3003;
+  app.listen(PORT, () => {
+    console.log(`StatNexus API running on http://localhost:${PORT}`);
+  });
+}
 
 // Export for Netlify Functions
 export default app;

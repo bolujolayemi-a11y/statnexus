@@ -1,4 +1,5 @@
 // src/routes/index.jsx
+import { useState } from 'react';
 import Landing from '../pages/Landing.jsx';
 import ExamSetup from '../pages/ExamSetup.jsx';
 import ExamSession from '../pages/ExamSession.jsx';
@@ -21,15 +22,23 @@ export default function AppRouter({
     userAnswers, setUserAnswers, evaluateFinalAnswers, score 
   } = useExamSystem();
 
+  // Store the navigation parameters in the view state
+  const [viewParams, setViewParams] = useState({});
+
+  const navigateTo = (view, params = {}) => {
+    setViewParams(params);
+    setView(view);
+  };
+
   switch (currentView) {
     case 'welcome':
     case 'landing':
-      return <Landing examDomains={examDomains} isAuthenticated={isAuthenticated} onSelectExam={(type) => { setConfig({ ...config, examType: type, topic: examDomains[type][0] }); setView('config'); }} />;
+      return <Landing examDomains={examDomains} isAuthenticated={isAuthenticated} onSelectExam={(type) => { setConfig({ ...config, examType: type, topic: examDomains[type][0] }); setView('config'); }} navigateTo={navigateTo} />;
 
     case 'auth':
       return (
         <AuthLayout onBack={() => setView('landing')}>
-          <Auth onAuthenticate={onAuthenticate} setView={setView} />
+          <Auth onAuthenticate={onAuthenticate} setView={setView} initialMode={viewParams.mode || 'register'} />
         </AuthLayout>
       );
 

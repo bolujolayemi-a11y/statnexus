@@ -3,8 +3,8 @@ import { Eye, EyeOff } from "lucide-react";
 import { auth } from "../lib/auth.js";
 import Button from "../components/common/Button.jsx";
 
-export default function Auth({ onAuthenticate, setView }) {
-  const [mode, setMode] = useState("register");
+export default function Auth({ onAuthenticate, setView, initialMode = 'register' }) {
+  const [mode, setMode] = useState(initialMode);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({ fullName: "", email: "", password: "" });
