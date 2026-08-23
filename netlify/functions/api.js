@@ -319,7 +319,7 @@ app.get('/api/test-results', authenticateToken, async (req, res) => {
     const currentPool = getPool();
     
     const result = await currentPool.query(
-      'SELECT id, user_id, score, duration_minutes, created_at FROM test_results WHERE user_id = $1 ORDER BY created_at DESC',
+      'SELECT id, user_id, score, duration_minutes, created_at FROM test_results WHERE user_id = $1 ORDER BY completed_at DESC ',
       [req.user.userId]
     );
 
