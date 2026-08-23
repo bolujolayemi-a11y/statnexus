@@ -18,13 +18,13 @@ router.get('/', requireAuth, async (req, res) => {
        WHERE user_id = $1
        ${withQuestions ? 'AND questions IS NOT NULL' : ''}
        ORDER BY completed_at DESC`,
-      [req.user.id]
+      [req.user.userId] // <--- Fixed: changed req.user.id to req.user.userId
     );
 
     return res.json(result.rows);
   } catch (err) {
     console.error('Get test results error:', err);
-    return res.status(500).json({ error: 'Failed to fetch test results' });
+    return res.status(500).json({ error: 'Failed to fetch test results', details: err.message });
   }
 });
 
@@ -49,7 +49,7 @@ router.post('/', requireAuth, async (req, res) => {
        VALUES ($1, $2, $3, $4, $5, $6, $7)
        RETURNING id, exam_type, score, duration_minutes, completed_at`,
       [
-        req.user.id,
+        req.user.userId, // <--- Fixed: changed req.user.id to req.user.userId
         exam_type,
         score,
         questions_count,
@@ -62,7 +62,7 @@ router.post('/', requireAuth, async (req, res) => {
     return res.status(201).json(result.rows[0]);
   } catch (err) {
     console.error('Insert test result error:', err);
-    return res.status(500).json({ error: 'Failed to save test result' });
+    return res.status(500).json({ error: 'Failed to save test result', details: err.message });
   }
 });
 
