@@ -371,23 +371,26 @@ app.post('/api/auth/register', async (req, res) => {
     console.log('=== REGISTER ATTEMPT ===');
     console.log('Request body:', req.body);
     
-    const { email, password, fullName } = req.body;
+    const { email, password, full_name, fullName } = req.body;
+    const fullNameValue = full_name ?? fullName;
     
-    if (!email || !password || !fullName) {
-      console.log('Missing fields:', { hasEmail: !!email, hasPassword: !!password, hasFullName: !!fullName });
+    if (!email || !password || !fullNameValue) {
+      console.log('Missing fields:', { hasEmail: !!email, hasPassword: !!password, hasFullName: !!fullNameValue });
       return res.status(400).json({ 
         error: 'All fields required',
-        details: 'Email, password, and fullName are required',
-        received: { email, hasPassword: !!password, fullName }
+        details: 'Email, password, and full_name are required',
+        received: { email, hasPassword: !!password, full_name: fullNameValue }
       });
     }
 
     const currentPool = getPool();
+    const normalizedEmail = email.toLowerCase().trim();
+    const normalizedFullName = fullNameValue.trim();
     
-    console.log('Checking if user exists:', email);
+    console.log('Checking if user exists:', normalizedEmail);
     const existingUser = await currentPool.query(
       'SELECT id FROM users WHERE email = $1',
-      [email]
+      [normalizedEmail]
     );
 
     if (existingUser.rows.length > 0) {
@@ -400,14 +403,14 @@ app.post('/api/auth/register', async (req, res) => {
 
     console.log('Creating user...');
     const result = await currentPool.query(
-      'INSERT INTO users (id, email, password_hash, created_at) VALUES (gen_random_uuid(), $1, $2, NOW()) RETURNING id, email',
-      [email, passwordHash]
+      'INSERT INTO users (id, email, password_hash, created_at, email_verified) VALUES (gen_random_uuid(), $1, $2, NOW(), false) RETURNING id, email, email_verified',
+      [normalizedEmail, passwordHash]
     );
 
     console.log('Creating profile...');
     await currentPool.query(
       'INSERT INTO profiles (id, full_name, updated_at) VALUES ($1, $2, NOW())',
-      [result.rows[0].id, fullName]
+      [result.rows[0].id, normalizedFullName]
     );
 
     const jwtSecret = process.env.JWT_SECRET;
@@ -430,13 +433,13 @@ app.post('/api/auth/register', async (req, res) => {
         user: {
           id: result.rows[0].id,
           email: result.rows[0].email,
-          fullName: fullName
+          fullName: normalizedFullName
         }
       },
       user: {
         id: result.rows[0].id,
         email: result.rows[0].email,
-        fullName: fullName
+        fullName: normalizedFullName
       }
     });
   } catch (error) {
