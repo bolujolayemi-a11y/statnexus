@@ -11,10 +11,14 @@ export default function Dashboard({ examDomains, onSelectExam, setView }) {
   useEffect(() => {
     async function fetchData() {
       try {
+        console.log('Fetching dashboard data...');
         const [profileData, results] = await Promise.all([
           apiFetch('/profile'),
           apiFetch('/test-results'),
         ]);
+
+        console.log('Profile data:', profileData);
+        console.log('Test results:', results);
 
         if (profileData) {
           setProfile({ name: profileData.full_name, tier: profileData.account_tier });
@@ -29,6 +33,8 @@ export default function Dashboard({ examDomains, onSelectExam, setView }) {
             sprints: results.length, 
             time: totalTime 
           });
+        } else {
+          console.log('No test results found');
         }
       } catch (err) {
         console.error('Failed to load dashboard:', err);

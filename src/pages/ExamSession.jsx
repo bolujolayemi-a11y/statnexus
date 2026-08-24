@@ -33,23 +33,38 @@ export default function ExamSession({
     });
     const finalScore = Math.round((correctCount / questions.length) * 100);
 
+    console.log('Saving test result:', {
+      examType,
+      score: finalScore,
+      questionsCount: questions.length,
+      duration: timeSpentMins,
+      userAnswers
+    });
+
     try {
       const { data: { user } } = await auth.getUser();
+      console.log('Current user:', user);
+      
       if (user) {
-        await apiFetch('/test-results', {
+        const result = await apiFetch('/test-results', {
           method: 'POST',
           body: JSON.stringify({
             exam_type: examType || 'General',
             score: finalScore,
             questions_count: questions.length,
             duration_minutes: timeSpentMins,
+            completed_at: new Date().toISOString(),
             user_answers: userAnswers,
             questions: questions,
           }),
         });
+        console.log('Test result saved successfully:', result);
+      } else {
+        console.warn('No user found, skipping test result save');
       }
     } catch (err) {
       console.error("Failed to save result:", err);
+      // Continue with completion even if save fails
     } finally {
       setIsSubmitting(false);
       onCompleteExam(timeSpentMins);

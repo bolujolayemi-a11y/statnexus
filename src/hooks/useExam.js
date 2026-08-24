@@ -14,7 +14,7 @@ export function useExam() {
   });
 
   const initializeTestSession = (examType, topic) => {
-    const activeQuestions = generateLocalSession(examType, topic);
+    const activeQuestions = generateLocalSession(examType, topic, config.count);
     setQuestions(activeQuestions);
     setUserAnswers({});
     setScore(0);
