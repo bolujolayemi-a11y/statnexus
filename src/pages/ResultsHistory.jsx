@@ -12,7 +12,7 @@ export default function ResultsHistory({ setView, onSelectReview }) {
       try {
         setLoading(true);
         console.log('Fetching test results history...');
-        const data = await apiFetch('/test-results');
+        const data = await apiFetch('/test-results?withQuestions=true');
         console.log('Raw history data:', data);
 
         const parsedHistory = (data || []).map(item => ({

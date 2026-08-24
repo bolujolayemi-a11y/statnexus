@@ -317,9 +317,13 @@ app.put('/api/profile', authenticateToken, async (req, res) => {
 app.get('/api/test-results', authenticateToken, async (req, res) => {
   try {
     const currentPool = getPool();
+    const withQuestions = req.query.withQuestions === 'true';
+    const fields = withQuestions
+      ? 'id, user_id, exam_type, score, questions_count, duration_minutes, completed_at, questions, user_answers'
+      : 'id, user_id, exam_type, score, questions_count, duration_minutes, completed_at';
     
     const result = await currentPool.query(
-      'SELECT id, user_id, score, duration_minutes, completed_at FROM test_results WHERE user_id = $1 ORDER BY completed_at DESC ',
+      `SELECT ${fields} FROM test_results WHERE user_id = $1 ORDER BY completed_at DESC`,
       [req.user.userId]
     );
 
@@ -332,12 +336,26 @@ app.get('/api/test-results', authenticateToken, async (req, res) => {
 
 app.post('/api/test-results', authenticateToken, async (req, res) => {
   try {
-    const { score, duration_minutes, exam_type, questions, user_answers, completed_at } = req.body;
+    const {
+      score,
+      duration_minutes,
+      exam_type,
+      questions_count,
+      questions,
+      user_answers,
+      completed_at
+    } = req.body;
+    const questionCount = questions_count ?? questions?.length;
+
+    if (!exam_type || score == null || questionCount == null) {
+      return res.status(400).json({ error: 'exam_type, score, and questions_count are required' });
+    }
+
     const currentPool = getPool();
     
     const result = await currentPool.query(
-      'INSERT INTO test_results (id, user_id, score, duration_minutes, exam_type, questions, user_answers, completed_at) VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7) RETURNING *',
-      [req.user.userId, score, duration_minutes, exam_type, JSON.stringify(questions), JSON.stringify(user_answers), completed_at || new Date().toISOString()]
+      'INSERT INTO test_results (id, user_id, score, questions_count, duration_minutes, exam_type, questions, user_answers, completed_at) VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, $8) RETURNING *',
+      [req.user.userId, score, questionCount, duration_minutes, exam_type, JSON.stringify(questions), JSON.stringify(user_answers), completed_at || new Date().toISOString()]
     );
 
     res.json(result.rows[0]);

@@ -9,16 +9,15 @@ router.get('/', requireAuth, async (req, res) => {
 
   try {
     const fields = withQuestions
-      ? 'id, exam_type, score, duration_minutes, completed_at, questions, user_answers'
-      : 'score, duration_minutes';
+      ? 'id, exam_type, score, questions_count, duration_minutes, completed_at, questions, user_answers'
+      : 'id, exam_type, score, questions_count, duration_minutes, completed_at';
 
     const result = await query(
       `SELECT ${fields}
        FROM test_results
        WHERE user_id = $1
-       ${withQuestions ? 'AND questions IS NOT NULL' : ''}
        ORDER BY completed_at DESC`,
-      [req.user.userId] // <--- Fixed: changed req.user.id to req.user.userId
+      [req.user.id]
     );
 
     return res.json(result.rows);
@@ -49,7 +48,7 @@ router.post('/', requireAuth, async (req, res) => {
        VALUES ($1, $2, $3, $4, $5, $6, $7)
        RETURNING id, exam_type, score, duration_minutes, completed_at`,
       [
-        req.user.userId, // <--- Fixed: changed req.user.id to req.user.userId
+        req.user.id,
         exam_type,
         score,
         questions_count,
