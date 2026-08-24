@@ -100,7 +100,7 @@ export default function AINotes({ setView }) {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-4 md:p-6">
+    <div className="min-h-screen bg-linear-to-br from-blue-50 via-indigo-50 to-purple-50 p-4 md:p-6">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-6 md:mb-8">
@@ -144,7 +144,7 @@ export default function AINotes({ setView }) {
         {note && !loading && (
           <div className="bg-white rounded-2xl shadow-xl overflow-hidden border-2 border-indigo-100">
             {/* Note Header */}
-            <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-4 md:p-6">
+            <div className="bg-linear-to-r from-indigo-600 to-purple-600 text-white p-4 md:p-6">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 md:gap-3">
                   <span className="text-3xl md:text-4xl">{note.icon}</span>
@@ -166,7 +166,7 @@ export default function AINotes({ setView }) {
             {/* Note Sections */}
             <div className="p-4 md:p-6 space-y-4 md:space-y-6">
               {note.sections.map((section, index) => (
-                <div key={index} className="bg-gradient-to-br from-gray-50 to-blue-50 rounded-xl p-4 md:p-5 border-l-4 border-indigo-400">
+                <div key={index} className="bg-linear-to-br from-gray-50 to-blue-50 rounded-xl p-4 md:p-5 border-l-4 border-indigo-400">
                   <h3 className="text-base md:text-lg font-semibold text-gray-800 mb-2 md:mb-3 flex items-center gap-2">
                     <span>{getSectionIcon(section.title)}</span>
                     {section.title}
@@ -188,7 +188,7 @@ export default function AINotes({ setView }) {
 
               {/* Golden Point */}
               {note.golden_point && (
-                <div className="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-xl p-4 md:p-5 border-2 border-yellow-300">
+                <div className="bg-linear-to-r from-yellow-50 to-orange-50 rounded-xl p-4 md:p-5 border-2 border-yellow-300">
                   <h3 className="text-base md:text-lg font-semibold text-orange-800 mb-2 flex items-center gap-2">
                     <span>⭐</span>
                     Golden Point

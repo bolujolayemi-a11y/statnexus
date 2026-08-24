@@ -4,8 +4,8 @@ import { useState } from 'react';
 import { Activity } from 'lucide-react';
 
 export default function Loader({ 
-  message = "Engaging Local DB & AI Core...", 
-  subMessage = "Preparing your board-standard scenarios" 
+  message = "Loading...", 
+  subMessage = "Building your personalized study guide..." 
 }) {
   return (
     <div className="py-20 text-center space-y-6 animate-in fade-in duration-500">

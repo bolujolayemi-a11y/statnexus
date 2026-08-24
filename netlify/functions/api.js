@@ -332,12 +332,12 @@ app.get('/api/test-results', authenticateToken, async (req, res) => {
 
 app.post('/api/test-results', authenticateToken, async (req, res) => {
   try {
-    const { score, duration_minutes, exam_type, questions, user_answers } = req.body;
+    const { score, duration_minutes, exam_type, questions, user_answers, completed_at } = req.body;
     const currentPool = getPool();
     
     const result = await currentPool.query(
-      'INSERT INTO test_results (id, user_id, score, duration_minutes, exam_type, questions, user_answers, created_at) VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, NOW()) RETURNING *',
-      [req.user.userId, score, duration_minutes, exam_type, JSON.stringify(questions), JSON.stringify(user_answers)]
+      'INSERT INTO test_results (id, user_id, score, duration_minutes, exam_type, questions, user_answers, completed_at) VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7) RETURNING *',
+      [req.user.userId, score, duration_minutes, exam_type, JSON.stringify(questions), JSON.stringify(user_answers), completed_at || new Date().toISOString()]
     );
 
     res.json(result.rows[0]);

@@ -51,7 +51,7 @@ export default function ResultsHistory({ setView, onSelectReview }) {
               <div className="flex items-center gap-4">
                 <div className="p-3 bg-slate-50 text-slate-600 rounded-2xl"><Award className="w-5 h-5" /></div>
                 <div>
-                  <p className="font-black text-slate-900 uppercase tracking-tight">{h.exam_type || 'General Exam'}</p>
+                  <p className="font-black text-slate-900 uppercase tracking-tight">{h.exam_type}</p>
                   <p className="text-[10px] font-bold text-slate-400 uppercase">
                     {new Date(h.completed_at).toLocaleDateString()} • {h.duration_minutes || 0} min • {h.questions_count || h.questions?.length || 0} questions
                   </p>
