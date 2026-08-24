@@ -256,6 +256,26 @@ app.get('/api/auth/me', authenticateToken, async (req, res) => {
   }
 });
 
+// Delete the authenticated user's account and cascaded data.
+app.delete('/api/auth/account', authenticateToken, async (req, res) => {
+  try {
+    const currentPool = getPool();
+    const result = await currentPool.query(
+      'DELETE FROM users WHERE id = $1 RETURNING id',
+      [req.user.userId]
+    );
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    return res.json({ message: 'Account deleted' });
+  } catch (error) {
+    console.error('Delete account error:', error);
+    return res.status(500).json({ error: 'Failed to delete account' });
+  }
+});
+
 // Profile endpoints
 app.get('/api/profile', authenticateToken, async (req, res) => {
   try {
