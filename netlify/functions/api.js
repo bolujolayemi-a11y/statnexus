@@ -556,8 +556,11 @@ async function generateStructuredNote(topic, classification) {
           "icon": "${template.icon}",
           "sections": [
             {
-              "title": "Section Title (title case)",
-              "content": ["Detailed content as bullet points", "More details", "Key points"]
+              "title": "Section Title (title case, uppercase style like a poster banner)",
+              "content": [
+                {"heading": "Short bold key term (2-5 words)", "description": "One or two short supporting sentences"},
+                {"heading": "Next key term", "description": "Short supporting detail"}
+              ]
             }
           ],
           "golden_point": "One memorable exam tip or clinical pearl"
@@ -565,7 +568,7 @@ async function generateStructuredNote(topic, classification) {
 
         Sections to include: ${sections}
 
-        Keep content concise, exam-focused, and clinically accurate. Each section should have 3-5 bullet points. Return ONLY valid JSON.`
+        Keep content concise, exam-focused, and clinically accurate. Each section should have 2-5 items, each item being a short bold heading (2-5 words) with a one-to-two sentence description. Return ONLY valid JSON.`
       },
       {
         role: 'user',
