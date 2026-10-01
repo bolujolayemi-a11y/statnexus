@@ -1,5 +1,4 @@
 // src/routes/index.jsx
-import { useState } from 'react';
 import Landing from '../pages/Landing.jsx';
 import ExamSetup from '../pages/ExamSetup.jsx';
 import ExamSession from '../pages/ExamSession.jsx';
@@ -14,21 +13,13 @@ import AINotes from '../pages/AINotes.jsx';
 import { useExamSystem } from '../hooks/useExamSystem.js';
 
 export default function AppRouter({ 
-  currentView, setView, examDomains, isAuthenticated, 
+  currentView, setView, viewParams = {}, navigateTo, examDomains, isAuthenticated, 
   onAuthenticate, resetToDashboard, activeResult, setActiveResult 
 }) {
   const { 
     config, setConfig, questions, initializeTestSession, 
     userAnswers, setUserAnswers, evaluateFinalAnswers, score 
   } = useExamSystem();
-
-  // Store the navigation parameters in the view state
-  const [viewParams, setViewParams] = useState({});
-
-  const navigateTo = (view, params = {}) => {
-    setViewParams(params);
-    setView(view);
-  };
 
   switch (currentView) {
     case 'welcome':
@@ -38,7 +29,8 @@ export default function AppRouter({
     case 'auth':
       return (
         <AuthLayout onBack={() => setView('landing')}>
-          <Auth onAuthenticate={onAuthenticate} setView={setView} initialMode={viewParams.mode || 'register'} />
+          {/* key forces a remount when switching login <-> register while already on the auth view */}
+          <Auth key={viewParams.mode || 'register'} onAuthenticate={onAuthenticate} setView={setView} initialMode={viewParams.mode || 'register'} />
         </AuthLayout>
       );
 

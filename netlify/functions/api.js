@@ -512,6 +512,101 @@ const NOTE_TEMPLATES = {
   }
 };
 
+const WHO_GUIDANCE = [
+  {
+    title: 'WHO Labour Care Guide: User’s Manual',
+    url: 'https://www.who.int/publications/i/item/9789240017566',
+    focus: 'A woman-centred tool for monitoring labour, including supportive care and maternal and fetal wellbeing. Use its alert thresholds to prompt assessment, not as automatic indications for intervention.',
+    keywords: ['labour', 'labor', 'childbirth', 'intrapartum', 'labour care guide', 'labor care guide', 'partograph', 'partogram']
+  },
+  {
+    title: 'WHO E-MOTIVE approach to postpartum haemorrhage',
+    url: 'https://www.who.int/teams/sexual-and-reproductive-health-and-research-(srh)/areas-of-work/maternal-and-perinatal-health/e-motive',
+    focus: 'Early detection and bundled first-response treatment for postpartum haemorrhage; the bundle includes uterine massage, oxytocics, tranexamic acid, intravenous fluids, examination and escalation.',
+    keywords: ['e-motive', 'emotive', 'postpartum haemorrhage', 'postpartum hemorrhage', 'post-partum haemorrhage', 'post-partum hemorrhage', 'pph', 'uterine atony']
+  },
+  {
+    title: 'WHO recommendations on intrapartum care for a positive childbirth experience',
+    url: 'https://www.who.int/publications/i/item/9789241550215',
+    focus: 'Evidence-informed care during labour and childbirth, emphasizing respectful, person-centred care and positive childbirth experience.',
+    keywords: ['intrapartum', 'childbirth', 'labour', 'labor', 'birth experience', 'delivery care']
+  },
+  {
+    title: 'WHO recommendations on antenatal care for a positive pregnancy experience',
+    url: 'https://www.who.int/publications/i/item/9789241549912',
+    focus: 'Routine antenatal care, including nutrition, maternal and fetal assessment, preventive measures and quality of care.',
+    keywords: ['antenatal', 'prenatal', 'pregnancy', 'anc', 'antenatal care']
+  },
+  {
+    title: 'WHO recommendations on maternal and newborn care for a positive postnatal experience',
+    url: 'https://www.who.int/publications/i/item/9789240045989',
+    focus: 'Essential routine postnatal care for women and newborns in facility and community settings.',
+    keywords: ['postnatal', 'postpartum care', 'newborn care', 'puerperium', 'breastfeeding', 'lactation']
+  },
+  {
+    title: 'WHO medical eligibility criteria for contraceptive use',
+    url: 'https://www.who.int/publications/i/item/9789241563888',
+    focus: 'Evidence-based medical eligibility recommendations for contraceptive methods in people with specific characteristics or medical conditions.',
+    keywords: ['contraception', 'contraceptive', 'family planning', 'birth control', 'intrauterine device', 'iud']
+  },
+  {
+    title: 'WHO Abortion care guideline',
+    url: 'https://www.who.int/publications/i/item/9789240039483',
+    focus: 'Evidence-based recommendations for quality abortion care, including clinical care and service delivery.',
+    keywords: ['abortion', 'misoprostol abortion', 'mifepristone', 'post-abortion care']
+  },
+  {
+    title: 'WHO guidelines on hand hygiene in health care',
+    url: 'https://www.who.int/publications/i/item/9789241597906',
+    focus: 'Evidence review and recommendations to improve hand hygiene and reduce transmission of pathogens in healthcare settings.',
+    keywords: ['hand hygiene', 'handwashing', 'hand washing', 'infection prevention', 'infection control', 'aseptic technique']
+  },
+  {
+    title: 'WHO recommendations for prevention and treatment of pre-eclampsia and eclampsia',
+    url: 'https://www.who.int/publications/i/item/9789241548335',
+    focus: 'Evidence-informed recommendations to prevent and treat pre-eclampsia and eclampsia during pregnancy and childbirth.',
+    keywords: ['pre-eclampsia', 'preeclampsia', 'eclampsia', 'pregnancy hypertension', 'hypertension in pregnancy']
+  },
+  {
+    title: 'WHO consolidated guidelines on tuberculosis: drug-susceptible TB treatment',
+    url: 'https://www.who.int/publications/i/item/9789240048126',
+    focus: 'Current WHO recommendations for treatment and care of drug-susceptible tuberculosis; confirm regimen details against the latest WHO updates and local policy.',
+    keywords: ['tuberculosis', 'tb treatment', 'drug-susceptible tb', 'rifampicin', 'isoniazid']
+  },
+  {
+    title: 'Global Patient Safety Action Plan 2021-2030',
+    url: 'https://www.who.int/publications/i/item/9789240032705',
+    focus: 'WHO strategic framework for reducing avoidable harm and improving safety and quality across health services through 2030; it is a systems-level action plan, not a bedside procedure protocol.',
+    keywords: ['patient safety', 'medication safety', 'medication error', 'adverse event', 'near miss', 'clinical handover', 'safety culture', 'fall prevention', 'falls prevention']
+  },
+  {
+    title: 'WHO guideline on self-care interventions for health and well-being, 2022 revision',
+    url: 'https://www.who.int/publications/i/item/9789240052192',
+    focus: 'Revised WHO recommendations on self-care interventions; WHO identifies a living guideline version, so check the linked guideline platform for updates before using specific recommendations.',
+    keywords: ['self-care', 'self care', 'self-management', 'self management', 'home care', 'health promotion']
+  },
+  {
+    title: 'WHO core components of infection prevention and control programmes',
+    url: 'https://www.who.int/publications/i/item/9789241549929',
+    focus: 'Foundational 2016 WHO guidance for infection prevention and control programmes at national and health-facility levels; check current WHO updates and local IPC protocols for operational details.',
+    keywords: ['infection prevention programme', 'infection prevention and control', 'ipc programme', 'healthcare-associated infection', 'hospital-acquired infection', 'isolation precautions', 'standard precautions']
+  },
+  {
+    title: 'WHO-ICRC Basic Emergency Care: approach to the acutely ill and injured',
+    url: 'https://www.who.int/publications/i/item/9789241513081',
+    focus: 'WHO-ICRC first-contact emergency assessment and management resource. The WHO page includes postpartum-haemorrhage quick-card material updated in November 2025; follow linked current resources and local emergency protocols.',
+    keywords: ['basic emergency care', 'emergency triage', 'acute illness', 'acutely ill', 'abcde', 'sbar', 'trauma assessment', 'emergency assessment', 'postpartum haemorrhage', 'postpartum hemorrhage', 'pph']
+  }
+];
+
+function findWhoGuidance(topic) {
+  const normalizedTopic = topic.toLowerCase().replace(/[^a-z0-9\s-]/g, ' ');
+  return WHO_GUIDANCE
+    .filter((guidance) => guidance.keywords.some((keyword) => normalizedTopic.includes(keyword)))
+    .slice(0, 4)
+    .map(({ title, url, focus }) => ({ title, url, focus }));
+}
+
 async function classifyTopic(topic) {
   try {
     const response = await groq.chat.completions.create({
@@ -541,13 +636,22 @@ async function classifyTopic(topic) {
 async function generateStructuredNote(topic, classification) {
   const template = classification.template;
   const sections = template.sections.join(', ');
+  const whoGuidance = findWhoGuidance(topic);
+  const whoContext = whoGuidance.length
+    ? whoGuidance.map(({ title, focus, url }) => `- ${title}: ${focus} Official source: ${url}`).join('\n')
+    : 'No directly matched WHO guideline is in the curated reference list. Do not imply that the note is based on a specific WHO guideline.';
 
   const response = await groq.chat.completions.create({
     model: 'openai/gpt-oss-120b',
     messages: [
       {
         role: 'system',
-        content: `You are a nursing education expert. Generate a comprehensive study note for the topic: "${topic}". 
+        content: `You are a nursing education expert. Generate a comprehensive study note for the topic: "${topic}".
+
+        WHO guidance context for this topic:
+        ${whoContext}
+
+        Use relevant WHO guidance context when applicable. Do not invent exact recommendation wording, thresholds, dates, or recommendation strength. Distinguish WHO guidance from local protocols, and flag details that should be checked in the linked current source. If no relevant source is listed, do not claim WHO endorsement.
         
         The note should be a JSON object with this exact structure:
         {
@@ -583,6 +687,34 @@ async function generateStructuredNote(topic, classification) {
   return JSON.parse(response.choices[0].message.content);
 }
 
+const MAX_TOPIC_LENGTH = 200;
+const HISTORY_LIMIT = 50;
+
+// Persist (or bump) a search for the given user. Never throws — a history
+// failure must not break note generation.
+async function recordSearch(userId, topic, note) {
+  const normalized = topic.trim();
+
+  try {
+    const currentPool = getPool();
+    const result = await currentPool.query(
+      `INSERT INTO ai_note_history (user_id, topic, note)
+       VALUES ($1, $2, $3)
+       ON CONFLICT (user_id, topic) DO UPDATE
+         SET search_count = ai_note_history.search_count + 1,
+             last_searched_at = now(),
+             note = COALESCE(EXCLUDED.note, ai_note_history.note)
+       RETURNING id, topic, search_count, created_at, last_searched_at`,
+      [userId, normalized, note ? JSON.stringify(note) : null]
+    );
+
+    return result.rows[0] || null;
+  } catch (error) {
+    console.error('Record AI note search error:', error.message);
+    return null;
+  }
+}
+
 app.post('/api/ai-notes/generate', authenticateToken, async (req, res) => {
   try {
     const { topic } = req.body;
@@ -591,17 +723,112 @@ app.post('/api/ai-notes/generate', authenticateToken, async (req, res) => {
       return res.status(400).json({ error: 'Topic is required' });
     }
 
-    const classification = await classifyTopic(topic);
-    const note = await generateStructuredNote(topic, classification);
-    
-    res.json({
+    const normalizedTopic = topic.trim().slice(0, MAX_TOPIC_LENGTH);
+
+    const classification = await classifyTopic(normalizedTopic);
+    const note = await generateStructuredNote(normalizedTopic, classification);
+    const fullNote = {
       ...note,
       generated_at: new Date().toISOString(),
-      topic
+      topic: normalizedTopic,
+      who_guidance: findWhoGuidance(normalizedTopic),
+    };
+
+    const historyEntry = await recordSearch(req.user.userId, normalizedTopic, fullNote);
+
+    res.json({
+      ...fullNote,
+      history_id: historyEntry?.id || null,
+      search_count: historyEntry?.search_count || 1,
     });
   } catch (err) {
     console.error('AI Notes generation error:', err);
     res.status(500).json({ error: 'Failed to generate study note', details: err.message });
+  }
+});
+
+// List previously searched topics (newest search first)
+app.get('/api/ai-notes/history', authenticateToken, async (req, res) => {
+  try {
+    const currentPool = getPool();
+    const limit = Math.min(parseInt(req.query.limit, 10) || 20, HISTORY_LIMIT);
+
+    const result = await currentPool.query(
+      `SELECT id, topic, search_count, created_at, last_searched_at,
+              CASE WHEN note IS NULL THEN false ELSE true END AS has_note
+       FROM ai_note_history
+       WHERE user_id = $1
+       ORDER BY last_searched_at DESC
+       LIMIT $2`,
+      [req.user.userId, limit]
+    );
+
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Get AI note history error:', error);
+    res.status(500).json({ error: 'Failed to fetch history', details: error.message });
+  }
+});
+
+// Fetch one saved note
+app.get('/api/ai-notes/history/:id', authenticateToken, async (req, res) => {
+  try {
+    const currentPool = getPool();
+    const result = await currentPool.query(
+      `SELECT id, topic, note, search_count, created_at, last_searched_at
+       FROM ai_note_history
+       WHERE id = $1 AND user_id = $2`,
+      [req.params.id, req.user.userId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'History entry not found' });
+    }
+
+    const entry = result.rows[0];
+
+    res.json({
+      ...(entry.note || {}),
+      id: entry.id,
+      topic: entry.topic,
+      search_count: entry.search_count,
+      generated_at: entry.note?.generated_at || entry.last_searched_at,
+    });
+  } catch (error) {
+    console.error('Get AI note history entry error:', error);
+    res.status(500).json({ error: 'Failed to fetch history entry', details: error.message });
+  }
+});
+
+// Delete a single history entry
+app.delete('/api/ai-notes/history/:id', authenticateToken, async (req, res) => {
+  try {
+    const currentPool = getPool();
+    const result = await currentPool.query(
+      'DELETE FROM ai_note_history WHERE id = $1 AND user_id = $2 RETURNING id',
+      [req.params.id, req.user.userId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'History entry not found' });
+    }
+
+    res.json({ message: 'History entry deleted' });
+  } catch (error) {
+    console.error('Delete AI note history entry error:', error);
+    res.status(500).json({ error: 'Failed to delete history entry', details: error.message });
+  }
+});
+
+// Clear the entire history
+app.delete('/api/ai-notes/history', authenticateToken, async (req, res) => {
+  try {
+    const currentPool = getPool();
+    await currentPool.query('DELETE FROM ai_note_history WHERE user_id = $1', [req.user.userId]);
+    res.json({ message: 'History cleared' });
+  } catch (error) {
+    console.error('Clear AI note history error:', error);
+    res.status(500).json({ error: 'Failed to clear history', details: error.message });
   }
 });
 

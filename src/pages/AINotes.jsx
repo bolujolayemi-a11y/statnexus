@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { apiFetch } from '../lib/api';
 import Card from '../components/common/Card';
 import Button from '../components/common/Button';
@@ -63,14 +63,85 @@ const SECTION_ICONS = {
   evaluation: '✅'
 };
 
+function formatRelativeTime(value) {
+  if (!value) return '';
+
+  const then = new Date(value).getTime();
+  if (Number.isNaN(then)) return '';
+
+  const diffMs = Date.now() - then;
+  const minutes = Math.floor(diffMs / 60000);
+
+  if (minutes < 1) return 'just now';
+  if (minutes < 60) return `${minutes}m ago`;
+
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `${days}d ago`;
+
+  return new Date(value).toLocaleDateString();
+}
+
 export default function AINotes({ setView }) {
   const [topic, setTopic] = useState('');
   const [note, setNote] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [history, setHistory] = useState([]);
+  const [historyLoading, setHistoryLoading] = useState(true);
+  const [historyError, setHistoryError] = useState('');
+  const [openingId, setOpeningId] = useState(null);
+  const [clearing, setClearing] = useState(false);
 
-  const handleGenerate = async () => {
-    if (!topic.trim()) {
+  // Reloads the search history list from the API.
+  const refreshHistory = useCallback(async () => {
+    setHistoryLoading(true);
+
+    try {
+      const entries = await apiFetch('/ai-notes/history?limit=20');
+      setHistory(Array.isArray(entries) ? entries : []);
+      setHistoryError('');
+    } catch (err) {
+      console.error('AI Notes history error:', err);
+      setHistoryError('Could not load your search history.');
+    } finally {
+      setHistoryLoading(false);
+    }
+  }, []);
+
+  // Fetch on mount (promise callbacks keep state updates out of the effect body)
+  useEffect(() => {
+    let cancelled = false;
+
+    apiFetch('/ai-notes/history?limit=20')
+      .then((entries) => {
+        if (cancelled) return;
+        setHistory(Array.isArray(entries) ? entries : []);
+        setHistoryError('');
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        console.error('AI Notes history error:', err);
+        setHistoryError('Could not load your search history.');
+      })
+      .finally(() => {
+        if (!cancelled) setHistoryLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // topicOverride lets history items regenerate themselves without waiting
+  // for the `topic` state to settle.
+  const handleGenerate = async (e, topicOverride) => {
+    e?.preventDefault?.();
+    const requestedTopic = (topicOverride ?? topic).trim();
+
+    if (!requestedTopic) {
       setError('Please enter a topic');
       return;
     }
@@ -82,15 +153,69 @@ export default function AINotes({ setView }) {
     try {
       const response = await apiFetch('/ai-notes/generate', {
         method: 'POST',
-        body: JSON.stringify({ topic }),
+        body: JSON.stringify({ topic: requestedTopic }),
       });
 
       setNote(response);
+      refreshHistory();
     } catch (err) {
       setError('Failed to generate note. Please try again.');
       console.error('AI Notes error:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Reopen a previously generated note from history — no re-generation needed
+  const handleOpenHistory = async (entry) => {
+    setOpeningId(entry.id);
+    setError('');
+    setNote(null);
+
+    try {
+      const saved = await apiFetch(`/ai-notes/history/${entry.id}`);
+
+      if (!saved.sections) {
+        // Entry exists but the stored note is missing — fall back to regenerating
+        setTopic(entry.topic);
+        await handleGenerate(undefined, entry.topic);
+        return;
+      }
+
+      setTopic(entry.topic);
+      setNote(saved);
+    } catch (err) {
+      console.error('AI Notes history open error:', err);
+      setError('Could not open that saved note. Please try again.');
+    } finally {
+      setOpeningId(null);
+    }
+  };
+
+  const handleDeleteEntry = async (entry) => {
+    setHistory((prev) => prev.filter((item) => item.id !== entry.id));
+
+    try {
+      await apiFetch(`/ai-notes/history/${entry.id}`, { method: 'DELETE' });
+    } catch (err) {
+      console.error('AI Notes history delete error:', err);
+      setError('Could not remove that history item.');
+      refreshHistory();
+    }
+  };
+
+  const handleClearHistory = async () => {
+    setClearing(true);
+    setError('');
+
+    try {
+      await apiFetch('/ai-notes/history', { method: 'DELETE' });
+      setHistory([]);
+    } catch (err) {
+      console.error('AI Notes history clear error:', err);
+      setError('Could not clear your search history.');
+    } finally {
+      setClearing(false);
     }
   };
 
@@ -110,7 +235,7 @@ export default function AINotes({ setView }) {
             </span>
             <div className="min-w-0">
               <h1 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight leading-tight">AI Study Notes</h1>
-              <p className="text-[11px] md:text-xs font-bold text-indigo-600 uppercase tracking-widest">Visual study posters</p>
+              <p className="text-[11px] md:text-xs font-bold text-indigo-600 uppercase tracking-widest">Visual study</p>
             </div>
           </div>
           <button
@@ -148,6 +273,70 @@ export default function AINotes({ setView }) {
           </div>
           {error && <p className="text-red-500 mt-2 text-sm">{error}</p>}
         </Card>
+
+        {/* Search History */}
+        {!note && (
+          <Card className="mb-6 md:mb-8">
+            <div className="flex items-center justify-between gap-3 mb-3 md:mb-4">
+              <h3 className="text-sm md:text-base font-semibold text-gray-800">
+                🕘 Recent Searches
+              </h3>
+              {history.length > 0 && (
+                <button
+                  onClick={handleClearHistory}
+                  disabled={clearing}
+                  className="text-[11px] md:text-xs font-bold text-red-500 hover:text-red-600 hover:bg-red-50 rounded-lg px-2 py-1 transition-colors disabled:opacity-50"
+                >
+                  {clearing ? 'Clearing...' : 'Clear all'}
+                </button>
+              )}
+            </div>
+
+            {historyLoading && (
+              <p className="text-sm text-gray-500">Loading your history...</p>
+            )}
+
+            {!historyLoading && historyError && (
+              <p className="text-sm text-gray-500">{historyError}</p>
+            )}
+
+            {!historyLoading && !historyError && history.length === 0 && (
+              <p className="text-sm text-gray-500">
+                No searches yet — your past topics will show up here.
+              </p>
+            )}
+
+            {!historyLoading && history.length > 0 && (
+              <ul className="divide-y divide-slate-100">
+                {history.map((entry) => (
+                  <li key={entry.id} className="flex items-center gap-2 py-2">
+                    <button
+                      onClick={() => handleOpenHistory(entry)}
+                      disabled={openingId === entry.id}
+                      className="flex-1 min-w-0 text-left group disabled:opacity-60"
+                    >
+                      <span className="block text-sm md:text-base font-medium text-slate-800 group-hover:text-indigo-700 truncate transition-colors">
+                        {entry.topic}
+                      </span>
+                      <span className="block text-[11px] md:text-xs text-gray-500">
+                        {formatRelativeTime(entry.last_searched_at || entry.created_at)}
+                        {entry.search_count > 1 && ` • searched ${entry.search_count}×`}
+                        {openingId === entry.id && ' • loading...'}
+                      </span>
+                    </button>
+                    <button
+                      onClick={() => handleDeleteEntry(entry)}
+                      aria-label={`Remove ${entry.topic} from history`}
+                      className="shrink-0 w-8 h-8 rounded-full text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                    >
+                      ✕
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Card>
+        )}
 
         {/* Loading State */}
         {loading && (
@@ -237,6 +426,29 @@ export default function AINotes({ setView }) {
                 )}
               </div>
             </div>
+
+            {note.who_guidance?.length > 0 && (
+              <div className="px-4 md:px-8 pb-4 md:pb-6">
+                <section className="rounded-xl border border-[#a5b4fc] bg-white px-4 py-4 md:px-5">
+                  <h3 className="text-sm md:text-base font-bold text-[#312e81]">WHO guidance references</h3>
+                  <ul className="mt-2 space-y-2">
+                    {note.who_guidance.map((guidance) => (
+                      <li key={guidance.url}>
+                        <a
+                          href={guidance.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-sm text-indigo-700 underline decoration-indigo-300 underline-offset-2 hover:text-indigo-900"
+                        >
+                          {guidance.title}
+                        </a>
+                        <p className="mt-0.5 text-xs md:text-sm text-slate-600">{guidance.focus}</p>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              </div>
+            )}
 
             {/* Poster Footer */}
             <div className="bg-[#e0e7ff] px-4 md:px-6 py-3 md:py-4 border-t border-[#c7d2fe]">

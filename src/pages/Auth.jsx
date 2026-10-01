@@ -38,7 +38,7 @@ export default function Auth({ onAuthenticate, setView, initialMode = 'register'
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight text-center">
-        {mode === "register" ? "Create Account" : "Sign In"}
+        {mode === "register" ? "Create Account" : "Welcome Back"}
       </h2>
       
       <form onSubmit={handleSubmit} className="space-y-4">

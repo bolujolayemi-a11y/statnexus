@@ -1,4 +1,4 @@
-import { LogIn, Shield, LogOut, ArrowLeft } from 'lucide-react';
+import { LogIn, Shield, LogOut, ArrowLeft, UserPlus } from 'lucide-react';
 import Button from '../components/common/Button.jsx';
 
 export default function DashboardLayout({ 
@@ -7,8 +7,16 @@ export default function DashboardLayout({
   isAuthenticated, 
   onLogOut, 
   setView, 
+  navigateTo,
   onBack 
 }) {
+  const goToAuth = (mode) => {
+    if (typeof navigateTo === 'function') {
+      navigateTo('auth', { mode });
+    } else {
+      setView('auth');
+    }
+  };
   return (
     <div className="min-h-screen bg-[#F8FAFC] text-slate-900 font-sans tracking-tight relative">
       <header className="flex items-center justify-between px-6 py-4 bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm/5">
@@ -41,13 +49,22 @@ export default function DashboardLayout({
           )}
 
           {!isAuthenticated ? (
-            <Button
-              variant="primary"
-              onClick={() => setView('auth')}
-              className="flex items-center gap-1.5 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all"
-            >
-              <LogIn className="w-3.5 h-3.5" /> Join us
-            </Button>
+            <div className="flex items-center gap-2">
+              <button 
+                type="button"
+                onClick={() => goToAuth('login')} 
+                className="flex items-center gap-1.5 px-4 py-2 border-2 border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50 text-slate-600 hover:text-slate-900 rounded-xl text-xs font-black uppercase tracking-wider transition-all"
+              >
+                <LogIn className="w-3.5 h-3.5" /> Login
+              </button>
+              <button 
+                type="button"
+                onClick={() => goToAuth('register')} 
+                className="flex items-center gap-1.5 px-4 py-2 border-2 border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50 text-slate-600 hover:text-slate-900 rounded-xl text-xs font-black uppercase tracking-wider transition-all"
+              >
+                <UserPlus className="w-3.5 h-3.5" /> Get Started
+              </button>
+            </div>
           ) : (
             <div className="flex items-center gap-2 bg-slate-50 border border-slate-100 pl-3 pr-2 py-1.5 rounded-xl">
               <span className="text-[10px] font-black text-slate-500 uppercase tracking-wider flex items-center gap-1">
@@ -65,7 +82,7 @@ export default function DashboardLayout({
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-6 py-12 transition-all duration-300">
+      <main className="mx-auto max-w-7xl px-4 py-6 transition-all duration-300 sm:px-6 sm:py-12">
         {children}
       </main>
     </div>

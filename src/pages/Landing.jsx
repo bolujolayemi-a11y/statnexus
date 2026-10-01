@@ -169,7 +169,7 @@ export default function Landing({ examDomains, onSelectExam, isAuthenticated, se
             <Card
               key={id}
               variant="interactive"
-              onClick={() => isAuthenticated ? onSelectExam(id) : (typeof setView === 'function' && setView('auth'))}
+              onClick={() => isAuthenticated ? onSelectExam(id) : (typeof navigateTo === 'function' ? navigateTo('auth', { mode: 'register' }) : (typeof setView === 'function' && setView('auth')))}
               className="group flex items-center justify-between p-6 h-32 border-2 border-slate-200 hover:border-blue-500 hover:shadow-lg transition-all duration-300"
             >
               <div className="flex items-center gap-4">
@@ -218,7 +218,7 @@ export default function Landing({ examDomains, onSelectExam, isAuthenticated, se
           <Button 
             variant="secondary" 
             onClick={handleGetStarted}
-            className="py-4 px-8 bg-white text-blue-700 hover:bg-blue-50 font-bold shadow-xl"
+            className="py-4 px-8 bg-slate-950! text-white! hover:bg-slate-800! font-bold shadow-xl"
           >
             {isAuthenticated ? "Start Practicing" : "Get Started Free"}
             <ArrowRight className="w-5 h-5 ml-2" />

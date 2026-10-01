@@ -9,6 +9,13 @@ export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
   const [activeResult, setActiveResult] = useState(null);
+  const [viewParams, setViewParams] = useState({});
+
+  // Navigate to a view with optional params (e.g. auth mode: 'login' | 'register')
+  const navigateTo = (view, params = {}) => {
+    setViewParams(params);
+    setView(view);
+  };
 
   const examDomains = {
     'NCLEX-RN': ['Management of Care', 'Safety & Infection Control', 'Health Promotion & Maintenance', 'Psychosocial Integrity', 'Basic Care & Comfort', 'Pharmacological & Parenteral Therapies', 'Reduction of Risk Potential', 'Physiological Adaptation'],
@@ -64,10 +71,13 @@ export default function App() {
           setView('welcome'); 
         }}
         setView={setView}
+        navigateTo={navigateTo}
       >
         <AppRouter 
           currentView={view} 
           setView={setView} 
+          viewParams={viewParams}
+          navigateTo={navigateTo}
           examDomains={examDomains} 
           isAuthenticated={isAuthenticated}
           onAuthenticate={handleAuthenticate}
